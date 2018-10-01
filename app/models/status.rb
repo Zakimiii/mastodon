@@ -24,6 +24,8 @@
 #
 
 class Status < ApplicationRecord
+  before_destroy :unlink_from_conversations
+
   include Paginable
   include Streamable
   include Cacheable
@@ -472,5 +474,29 @@ class Status < ApplicationRecord
 
     reblog&.decrement_count!(:reblogs_count) if reblog?
     thread&.decrement_count!(:replies_count) if in_reply_to_id.present? && (public_visibility? || unlisted_visibility?)
+  end
+
+  def unlink_from_conversations
+    return unless direct_visibility?
+
+    mentioned_accounts = mentions.includes(:account).map(&:account)
+    participants       = (mentioned_accounts - [account]).map(&:id).sort
+    inbox_owners       = mentioned_accounts.select(&:local?) + (account.local? ? [account] : [])
+
+    inbox_owners.each do |inbox_owner|
+      entry = ConversationAccount.find_or_initialize_by(account: inbox_owner, conversation: conversation, participant_account_ids: participants)
+
+      while last_status_id = entry.status_ids.pop do
+        last_status = Status.find(last_status_id)
+        break if last_status
+      end
+
+      if last_status.nil? && last_status_id.nil?
+        entry.destroy
+      else
+        entry.last_status = last_status
+        entry.save
+      end
+    end
   end
 end

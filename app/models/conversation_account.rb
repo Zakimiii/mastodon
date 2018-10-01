@@ -6,6 +6,7 @@
 #  account_id              :bigint(8)
 #  conversation_id         :bigint(8)
 #  participant_account_ids :bigint(8)        default([]), not null, is an Array
+#  status_ids              :bigint(8)        default([]), not null, is an Array
 #  last_status_id          :bigint(8)
 #
 
@@ -19,6 +20,10 @@ class ConversationAccount < ApplicationRecord
   end
 
   def participant_accounts
-    [account] + Account.where(id: participant_account_ids)
+    if participant_account_ids.empty?
+      [account]
+    else
+      Account.where(id: participant_account_ids)
+    end
   end
 end

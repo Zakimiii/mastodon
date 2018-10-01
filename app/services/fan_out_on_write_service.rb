@@ -112,6 +112,7 @@ class FanOutOnWriteService < BaseService
 
     inbox_owners.each do |inbox_owner|
       entry = ConversationAccount.find_or_initialize_by(account: inbox_owner, conversation: status.conversation, participant_account_ids: participants)
+      entry.status_ids << entry.last_status_id if entry.last_status_id.present?
       entry.last_status = status
       entry.save
     end

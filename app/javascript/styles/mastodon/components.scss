@@ -5496,3 +5496,9 @@ noscript {
     }
   }
 }
+
+.conversation {
+  padding: 8px 10px;
+  border-bottom: 1px solid lighten($ui-base-color, 8%);
+  cursor: default;
+}
